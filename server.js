@@ -6,7 +6,6 @@ const supabase = createClient('https://jsqfijyqkatobeptpuwo.supabase.co', 'eyJhb
 
 app.get('/', async (req, res) => {
     const { data, error } = await supabase.from('UserData').select('*');
-    console.log(data)
 
     // let postData = {
     //     username: 'V1kata',
@@ -23,7 +22,21 @@ app.get('/', async (req, res) => {
     //     console.log(error)
     // }
 
-    res.write(`<p style="color: red;">Working + ${data}</p>`);
+    let html = ``;
+    let dataToGetFrom = data[0];
+
+    for (let value in dataToGetFrom) {
+
+        if (typeof dataToGetFrom[value] == 'string' && dataToGetFrom[value].startsWith('[')) {
+            for (let objData of JSON.parse(dataToGetFrom[value])) {
+                html += `<p>${objData}</p>`;
+            }
+        } else {
+            html += `<p>${dataToGetFrom[value]}</p>`
+        }
+    }
+
+    res.write(html);
 });
 
 app.listen(3000, () => console.log('Server is running http://localhost:3000'));
