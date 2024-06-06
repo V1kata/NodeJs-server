@@ -5,6 +5,8 @@ const multer = require('multer');
 const path = require('path');
 
 const { createClient } = require('@supabase/supabase-js');
+const { get, post, put } = require('./api');
+const updateUser = require('./helperFn');
 
 const supabase = createClient('https://jsqfijyqkatobeptpuwo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcWZpanlxa2F0b2JlcHRwdXdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU4NzEyMzAsImV4cCI6MjAzMTQ0NzIzMH0.ADaf9peWyi_aSgkPtjfwye4S0QnvcWHxI7VUz0GCgJw')
 
@@ -14,28 +16,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
+    destination: function (req, file, cb) {
         cb(null, 'uploads/');
     },
-    filename: (req, file, cb) => {
+    filename: function (req, file, cb) {
         cb(null, Date.now() + path.extname(file.originalname));
     }
 });
 
 const upload = multer({ storage: storage });
 
-
-app.post('/upload', upload.single('file'), (req, res) => {
-    if (req.file) {
-        res.json({ fileUrl: `/uploads/${req.file.filename}` });
-    } else {
-        res.status(400).send('No file uploaded.');
-    }
-});
-
 app.get('/image/:filename', (req, res) => {
     const filename = req.params.filename;
-    const filePath = path.join(__dirname, 'uploads', filename);
+    const filePath = path.join(__dirname, 'uploads', filename)
 
     res.sendFile(filePath, err => {
         if (err) {
@@ -98,14 +91,83 @@ app.get('/', async (req, res) => {
     res.write(html);
 });
 
-app.post('/create-portfolio', upload.fields([
-    { name: 'avatarImage', maxCount: 1 },
-    { name: 'skillsImage', maxCount: 10 },
-    { name: 'projectsImage', maxCount: 10 },
-    { name: 'musicImage', maxCount: 10 }
-]), (req, res) => {
-    console.log(req.body)
-    console.log(req.files)
+app.post('/create-music/:id', async (req, res) => {
+    const { id } = req.params;
+    let body = req.body;
+
+    console.log(body)
+    try {
+        let result = await post('/classes/Music', body);
+        const updatedUser = await updateUser(id, 'Music', result.objectId);
+
+        res.status(200).json({ message: 'Everything is cool', result, updatedUser });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ message: 'Internal Server Error', error: err.message });
+    }
 })
+
+app.post('/create-user', upload.single('avatarImage'), async (req, res) => {
+    try {
+        let data = await post('/classes/UserData', { ...req.body, avatarImage: req.file.filename });
+        res.status(200).json({ message: 'Everything is cool', data });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ message: 'Internal Server Error', error: err.message });
+    }
+});
+
+app.post('/create-social/:id', upload.none(), async (req, res) => {
+    const { id } = req.params;
+    let body = req.body;
+
+    console.log(body)
+    try {
+        let result = await post('/classes/SocialNetwork', body);
+        const updatedUser = await updateUser(id, 'SocialNetwork', result.objectId);
+
+        res.status(200).json({ message: 'Everything is cool', result, updatedUser });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ message: 'Internal Server Error', error: err.message });
+    }
+});
+
+app.post('/create-skill/:id', async (req, res) => {
+    const { id } = req.params;
+    let body = req.body;
+
+    console.log(body)
+    try {
+        let result = await post('/classes/Skills', body);
+        const updatedUser = await updateUser(id, 'Skills', result.objectId);
+
+        res.status(200).json({ message: 'Everything is cool', result, updatedUser });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ message: 'Internal Server Error', error: err.message });
+    }
+});
+
+app.post('/create-project/:id', async (req, res) => {
+    const { id } = req.params;
+    let body = req.body;
+
+    try {
+        let result = await post('/classes/Projects', body);
+        const updatedUser = await updateUser(id, 'Projects', result.objectId);
+
+        res.status(200).json({ message: 'Everything is cool', result, updatedUser });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ message: 'Internal Server Error', error: err.message });
+    }
+})
+
+app.get('/users', async (req, res) => {
+    const data = await get('/classes/UserData');
+
+    res.status(200).json({ data });
+});
 
 app.listen(3000, () => console.log('Server is running http://localhost:3000'));
