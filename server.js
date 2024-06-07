@@ -37,68 +37,12 @@ app.get('/image/:filename', (req, res) => {
     });
 });
 
-app.get('/', async (req, res) => {
-    const { data, error } = await supabase.from('UserData').select('*');
-
-    let postData = {
-        username: 'V1kata',
-        avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMpIZbN3HsqSADBtsTrCB_An3KE-D3IIQknxdmXsR9AQ&s',
-        skills: JSON.stringify({
-            'skill1': 'skillImage1',
-            'skill2': 'skillImage2',
-            'skill3': 'skillImage3'
-        }),
-        projects: JSON.stringify({
-            'project1': 'projectCover1',
-            'project2': 'projectCover2',
-        }),
-        music: JSON.stringify({
-            'musicName1': {
-                'cover': 'coverImage',
-                'author': 'authorImage'
-            },
-            'musicName2': {
-                'cover': 'coverImage',
-                'author': 'authorImage'
-            }
-        }),
-        links: JSON.stringify({
-            'platform1': 'linkForPlatform1',
-            'platform2': 'linkForPlatform2'
-        }),
-    }
-
-    // const { error } = await supabase.from('UserData').insert(postData);
-
-    // if (error) {
-    //     console.log(error)
-    // }
-
-    let html = ``;
-    let dataToGetFrom = data[0];
-
-    for (let value in dataToGetFrom) {
-
-        if (typeof dataToGetFrom[value] == 'string' && dataToGetFrom[value].startsWith('[')) {
-            for (let objData of JSON.parse(dataToGetFrom[value])) {
-                html += `<p>${objData}</p>`;
-            }
-        } else {
-            html += `<p>${dataToGetFrom[value]}</p>`
-        }
-    }
-
-    res.write(html);
-});
-
-app.post('/create-music/:id', async (req, res) => {
+app.post('/create-music/:id', upload.none(), async (req, res) => {
     const { id } = req.params;
     let body = req.body;
-
-    console.log(body)
     try {
         let result = await post('/classes/Music', body);
-        const updatedUser = await updateUser(id, 'Music', result.objectId);
+        const updatedUser = await updateUser(id, 'music', 'Music', result.objectId);
 
         res.status(200).json({ message: 'Everything is cool', result, updatedUser });
     } catch (err) {
@@ -124,7 +68,7 @@ app.post('/create-social/:id', upload.none(), async (req, res) => {
     console.log(body)
     try {
         let result = await post('/classes/SocialNetwork', body);
-        const updatedUser = await updateUser(id, 'SocialNetwork', result.objectId);
+        const updatedUser = await updateUser(id, 'social', 'SocialNetwork', result.objectId);
 
         res.status(200).json({ message: 'Everything is cool', result, updatedUser });
     } catch (err) {
@@ -133,14 +77,13 @@ app.post('/create-social/:id', upload.none(), async (req, res) => {
     }
 });
 
-app.post('/create-skill/:id', async (req, res) => {
+app.post('/create-skill/:id', upload.none(), async (req, res) => {
     const { id } = req.params;
     let body = req.body;
 
-    console.log(body)
     try {
         let result = await post('/classes/Skills', body);
-        const updatedUser = await updateUser(id, 'Skills', result.objectId);
+        const updatedUser = await updateUser(id, 'skills', 'Skills', result.objectId);
 
         res.status(200).json({ message: 'Everything is cool', result, updatedUser });
     } catch (err) {
@@ -149,13 +92,13 @@ app.post('/create-skill/:id', async (req, res) => {
     }
 });
 
-app.post('/create-project/:id', async (req, res) => {
+app.post('/create-project/:id', upload.none(), async (req, res) => {
     const { id } = req.params;
     let body = req.body;
 
     try {
         let result = await post('/classes/Projects', body);
-        const updatedUser = await updateUser(id, 'Projects', result.objectId);
+        const updatedUser = await updateUser(id, 'projects', 'Projects', result.objectId);
 
         res.status(200).json({ message: 'Everything is cool', result, updatedUser });
     } catch (err) {
@@ -169,5 +112,18 @@ app.get('/users', async (req, res) => {
 
     res.status(200).json({ data });
 });
+
+app.get('/userDetails/:id', upload.none(), async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const data = await get(`/classes/UserData/${id}?include=social&include=music&include=projects&include=skills`);
+        console.log(data)
+        res.status(200).json({ data });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: 'Internal Server Error', error: err.message });
+    }
+})
 
 app.listen(3000, () => console.log('Server is running http://localhost:3000'));
