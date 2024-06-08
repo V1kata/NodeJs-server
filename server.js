@@ -108,7 +108,7 @@ app.post('/create-project/:id', upload.none(), async (req, res) => {
 })
 
 app.get('/users', async (req, res) => {
-    const data = await get('/classes/UserData');
+    const data = await get('/classes/UserData?include=projects');
 
     res.status(200).json({ data });
 });
